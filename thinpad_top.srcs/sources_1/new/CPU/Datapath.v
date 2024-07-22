@@ -31,11 +31,13 @@ module Datapath (
     wire [2:0] Ex_ALU_opt;
     wire [4:0] Ex_rd_addr;
     wire [31:0] Ex_pc, Ex_inst, Ex_imm, Ex_reg1_data, Ex_reg2_data, Ex_link_addr;
-    wire [31:0] Ex_ALU_res, Ex_mem_addr, Ex_mem_wdata;
+    wire [31:0] Ex_ALU_res, Ex_rd_data, Ex_mem_addr, Ex_mem_wdata;
 
     wire Mem_mem_read, Mem_mem_write, Mem_reg_write, Mem_data_width;
-    wire [31:0] Mem_rd_addr, Mem_rd_data;
-    wire [31:0] Mem_mem_addr, Mem_mem_wdata;
+    // wire [3:0] Mem_mem_wen;
+    wire [4:0] Mem_rd_addr;
+    wire [31:0] Mem_ALU_res, Mem_rd_data;
+    wire [31:0] Mem_mem_addr, Mem_mem_rdata, Mem_mem_wdata;
 
     wire WB_reg_write;
     wire [4:0] WB_rd_addr;
@@ -96,8 +98,9 @@ module Datapath (
     );
 
     StallUnit StallUnit (
+        .ID_rs1_ren(ID_rs1_ren),
+        .ID_rs2_ren(ID_rs2_ren),
         .Ex_mem_read(Ex_mem_read),
-        .ID_reg_write(ID_reg_write),
         .Ex_rd_addr(Ex_rd_addr),
         .ID_rs1_addr(ID_rs1_addr),
         .ID_rs2_addr(ID_rs2_addr),
@@ -175,15 +178,71 @@ module Datapath (
 
     assign Ex_mem_addr = Ex_ALU_res;
     assign Ex_mem_wdata = Ex_reg2_data;
+    // assign Ex_rd_data = Ex_ALU_res;
 
-    Ex Ex (
+    ALU ALU (
         .jump(Ex_jump),
+        .mem_read(Ex_mem_read),
+        .mem_write(Ex_mem_write),
         .ALU_opt(Ex_ALU_opt),
         .reg1(Ex_reg1_data),
         .reg2(Ex_reg2_data),
         .imm(Ex_imm),
         .link_addr(Ex_link_addr),
         .ALU_out(Ex_ALU_res)
+    );
+
+    Ex_Mem Ex_Mem (
+        .clk(clk),
+        .rst(rst),
+        .Ex_mem_read(Ex_mem_read),
+        .Ex_mem_write(Ex_mem_write),
+        .Ex_reg_write(Ex_reg_write),
+        .Ex_data_width(Ex_data_width),
+        .Ex_rd_addr(Ex_rd_addr),
+        .Ex_ALU_res(Ex_ALU_res),
+        .Ex_mem_addr(Ex_mem_addr),
+        .Ex_mem_wdata(Ex_mem_wdata),
+        .Mem_mem_read(Mem_mem_read),
+        .Mem_mem_write(Mem_mem_write),
+        .Mem_reg_write(Mem_reg_write),
+        .Mem_data_width(Mem_data_width),
+        .Mem_rd_addr(Mem_rd_addr),
+        .Mem_ALU_res(Mem_ALU_res),
+        .Mem_mem_addr(Mem_mem_addr),
+        .Mem_mem_wdata(Mem_mem_wdata)
+    );
+
+    /***************Mem***************/
+
+    // assign Mem_mem_rdata = data_sram_rdata;
+    assign data_sram_en = Mem_mem_read | Mem_mem_write;
+    // assign data_sram_wen = Mem_mem_wen;
+    assign data_sram_addr = Mem_mem_addr;
+    // assign data_sram_wdata = Mem_mem_wdata;
+
+    Mem Mem (
+        .mem_read(Mem_mem_read),
+        .mem_write(Mem_mem_write),
+        .data_width(Mem_data_width),
+        .ALU_res(Mem_ALU_res),
+        .mem_addr(Mem_mem_addr),
+        .mem_rdata(data_sram_rdata),
+        .mem_wdata_in(Mem_mem_wdata),
+        .mem_wen(data_sram_wen),
+        .rd_data(Mem_rd_data),
+        .mem_wdata_out(dara_sram_wdata)
+    );
+
+    Mem_WB Mem_WB (
+        .clk(clk),
+        .rst(rst),
+        .Mem_reg_write(Mem_reg_write),
+        .Mem_rd_addr(Mem_rd_addr),
+        .Mem_rd_dara(Mem_rd_data),
+        .WB_reg_write(WB_reg_write),
+        .WB_rd_addr(WB_rd_addr),
+        .WB_rd_data(WB_rd_data)
     );
 
 endmodule
