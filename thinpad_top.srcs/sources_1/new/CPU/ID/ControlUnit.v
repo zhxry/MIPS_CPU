@@ -23,8 +23,8 @@ module ControlUnit (
     wire [5:0] opcode = ID_inst[31:26];
 
     reg [10:0] controls;
-    assign controls = {rs1_ren, rs2_ren, reg_write, data_width, mem_read,
-                       mem_write, mem_to_reg, ALU_opt};
+    assign {rs1_ren, rs2_ren, reg_write, data_width,
+            mem_read, mem_write, mem_to_reg, ALU_opt} = controls;
 
     always @(*) begin
         case (opcode)

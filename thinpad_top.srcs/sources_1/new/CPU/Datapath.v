@@ -2,13 +2,14 @@ module Datapath (
     input wire clk,
     input wire rst,
 
-    input wire [31:0] inst_sram_rdata,
-    output wire inst_sram_en,
+    input  wire [31:0] inst_sram_rdata,
+    output wire        inst_sram_ce,
     output wire [31:0] inst_sram_addr,
 
-    input wire [31:0] data_sram_rdata,
-    output wire data_sram_en,
-    output wire [3:0] data_sram_wen,
+    input  wire [31:0] data_sram_rdata,
+    output wire        data_sram_ce,
+    output wire        data_sram_we,
+    output wire [3:0]  data_sram_be,
     output wire [31:0] data_sram_addr,
     output wire [31:0] data_sram_wdata
 );
@@ -34,10 +35,9 @@ module Datapath (
     wire [31:0] Ex_ALU_res, Ex_rd_data, Ex_mem_addr, Ex_mem_wdata;
 
     wire Mem_mem_read, Mem_mem_write, Mem_reg_write, Mem_data_width;
-    // wire [3:0] Mem_mem_wen;
     wire [4:0] Mem_rd_addr;
     wire [31:0] Mem_ALU_res, Mem_rd_data;
-    wire [31:0] Mem_mem_addr, Mem_mem_rdata, Mem_mem_wdata;
+    wire [31:0] Mem_mem_addr, Mem_mem_wdata;
 
     wire WB_reg_write;
     wire [4:0] WB_rd_addr;
@@ -53,7 +53,7 @@ module Datapath (
         .jump(ID_jump),
         .stall(stall),
         .jump_addr(ID_jump_addr),
-        .inst_en(inst_sram_en),
+        .inst_ce(inst_sram_ce),
         .pc(pc_addr)
     );
 
@@ -101,6 +101,7 @@ module Datapath (
         .ID_rs1_ren(ID_rs1_ren),
         .ID_rs2_ren(ID_rs2_ren),
         .Ex_mem_read(Ex_mem_read),
+        .ID_reg_write(ID_reg_write),
         .Ex_rd_addr(Ex_rd_addr),
         .ID_rs1_addr(ID_rs1_addr),
         .ID_rs2_addr(ID_rs2_addr),
@@ -115,8 +116,9 @@ module Datapath (
     ForwardingUnit ForwardingUnit (
         .ID_rs1_ren(ID_rs1_ren),
         .ID_rs2_ren(ID_rs2_ren),
-        .ID_reg_write(ID_reg_write),
         .Ex_mem_read(Ex_mem_read),
+        .Ex_reg_write(Ex_reg_write),
+        .Mem_reg_write(Mem_reg_write),
         .ID_rs1_addr(ID_rs1_addr),
         .ID_rs2_addr(ID_rs2_addr),
         .Ex_rd_addr(Ex_rd_addr),
@@ -133,10 +135,10 @@ module Datapath (
     JumpUnit JumpUnit (
         .ID_pc(ID_pc),
         .ID_inst(ID_inst),
-        .ID_reg1_data(ID_reg1_data),
-        .ID_reg2_data(ID_reg2_data),
-        .j_b(ID_jump),
-        .j_b_addr(ID_jump_addr),
+        .reg1_data(ID_reg1_data),
+        .reg2_data(ID_reg2_data),
+        .jump(ID_jump),
+        .jump_addr(ID_jump_addr),
         .link_addr(ID_link_addr)
     );
 
@@ -189,7 +191,7 @@ module Datapath (
         .reg2(Ex_reg2_data),
         .imm(Ex_imm),
         .link_addr(Ex_link_addr),
-        .ALU_out(Ex_ALU_res)
+        .ALU_res(Ex_ALU_res)
     );
 
     Ex_Mem Ex_Mem (
@@ -215,11 +217,7 @@ module Datapath (
 
     /***************Mem***************/
 
-    // assign Mem_mem_rdata = data_sram_rdata;
-    assign data_sram_en = Mem_mem_read | Mem_mem_write;
-    // assign data_sram_wen = Mem_mem_wen;
     assign data_sram_addr = Mem_mem_addr;
-    // assign data_sram_wdata = Mem_mem_wdata;
 
     Mem Mem (
         .mem_read(Mem_mem_read),
@@ -229,7 +227,9 @@ module Datapath (
         .mem_addr(Mem_mem_addr),
         .mem_rdata(data_sram_rdata),
         .mem_wdata_in(Mem_mem_wdata),
-        .mem_wen(data_sram_wen),
+        .mem_ce(data_sram_ce),
+        .mem_we(dara_sram_we),
+        .mem_be(data_sram_be),
         .rd_data(Mem_rd_data),
         .mem_wdata_out(dara_sram_wdata)
     );

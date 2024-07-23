@@ -82,7 +82,7 @@ module Regs (
     assign rs2_data = (rs2_addr == 0) ? 0 : regs[rs2_addr];
 
     always @(negedge clk or posedge rst) begin
-        if (rst) for (i = 0; i < 32; ++i) regs[i] <= 0;
+        if (rst) for (i = 0; i < 32; i = i + 1) regs[i] <= 0;
         else if (reg_write && rd_addr != 0) regs[rd_addr] <= rd_data;
     end
 

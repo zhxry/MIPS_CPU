@@ -35,6 +35,7 @@ R-type: addu and or xor sll srl jr mul (srav)
 `define FUNCT_R_XOR  6'b100110
 `define FUNCT_R_SLL  6'b000000
 `define FUNCT_R_SRL  6'b000010
+`define FUNCT_R_SRA  6'b000011
 `define FUNCT_R_JR   6'b001000
 `define FUNCT_R_JALR 6'b001001
 `define FUNCT_R_MUL  6'b000010
@@ -50,3 +51,13 @@ R-type: addu and or xor sll srl jr mul (srav)
 `define ALU_OP_SLL 3'b101
 `define ALU_OP_SRL 3'b110
 `define ALU_OP_SRA 3'b111
+
+/************RAM************/
+
+`define SERIAL_STAT 32'hBFD003FC
+`define SERIAL_DATA 32'hBFD003F8
+
+`define BASE_ADDR_ST 32'h80000000
+`define BASE_ADDR_ED 32'h80400000
+`define EXT_ADDR_ST  32'h80400000
+`define EXT_ADDR_ED  32'h80800000

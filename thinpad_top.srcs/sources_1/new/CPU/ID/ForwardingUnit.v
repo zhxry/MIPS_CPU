@@ -1,8 +1,9 @@
 module ForwardingUnit (
     input wire ID_rs1_ren,
     input wire ID_rs2_ren,
-    input wire ID_reg_write,
     input wire Ex_mem_read,
+    input wire Ex_reg_write,
+    input wire Mem_reg_write,
     input wire [4:0] ID_rs1_addr,
     input wire [4:0] ID_rs2_addr,
     input wire [4:0] Ex_rd_addr,
