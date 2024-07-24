@@ -6,10 +6,14 @@ module StallUnit (
     input wire [4:0] Ex_rd_addr,
     input wire [4:0] ID_rs1_addr,
     input wire [4:0] ID_rs2_addr,
-    output stall
+    output wire stall
 );
 
-    assign stall = Ex_mem_read && ID_reg_write &&
+    // assign stall = Ex_mem_read && ID_reg_write &&
+    //        ((ID_rs1_ren && Ex_rd_addr == ID_rs1_addr) ||
+    //        (ID_rs2_ren && Ex_rd_addr == ID_rs2_addr));
+
+    assign stall = Ex_mem_read &&
            ((ID_rs1_ren && Ex_rd_addr == ID_rs1_addr) ||
            (ID_rs2_ren && Ex_rd_addr == ID_rs2_addr));
 

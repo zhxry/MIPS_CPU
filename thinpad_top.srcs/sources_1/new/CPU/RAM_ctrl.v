@@ -1,7 +1,7 @@
 `include "Header.vh"
 
 module RAM_ctrl (
-    input wire clk_50M,
+    input wire clk,
     input wire rst,
 
     output reg  [31:0] inst_sram_rdata,
@@ -35,29 +35,29 @@ module RAM_ctrl (
     output reg         ext_ram_we_n  // ExtRAM 写使能，低有效
 );
 
-    wire [7:0] ext_uart_rx;
-    reg  [7:0] ext_uart_tx;
-    wire ext_uart_ready, ext_uart_busy;
-    reg  ext_uart_start, ext_uart_clear, ext_uart_clear_next;
+    wire [7:0] RxD_data;
+    reg  [7:0] TxD_data;
+    wire RxD_data_ready, TxD_busy;
+    reg  TxD_start, RxD_clear, RxD_clear_next;
 
     // 接收模块，9600 无检验位
-    async_receiver #(.ClkFrequency(50000000),.Baud(9600))
+    async_receiver #(.ClkFrequency(59000000),.Baud(9600))
         ext_uart_r(
-            .clk(clk_50M),                       //外部时钟信号
+            .clk(clk),                       //外部时钟信号
             .RxD(rxd),                           //外部串行信号输入
-            .RxD_data_ready(ext_uart_ready),  //数据接收到标志
-            .RxD_clear(ext_uart_clear),       //清除接收标志
-            .RxD_data(ext_uart_rx)             //接收到的一字节数据
+            .RxD_data_ready(RxD_data_ready),  //数据接收到标志
+            .RxD_clear(RxD_clear),       //清除接收标志
+            .RxD_data(RxD_data)             //接收到的一字节数据
         );
 
     // 发送模块，9600 无检验位
-    async_transmitter #(.ClkFrequency(50000000),.Baud(9600))
+    async_transmitter #(.ClkFrequency(59000000),.Baud(9600))
         ext_uart_t(
-            .clk(clk_50M),                  //外部时钟信号
+            .clk(clk),                  //外部时钟信号
             .TxD(txd),                      //串行信号输出
-            .TxD_busy(ext_uart_busy),       //发送器忙状态指示
-            .TxD_start(ext_uart_start),    //开始发送信号
-            .TxD_data(ext_uart_tx)        //待发送的数据
+            .TxD_busy(TxD_busy),       //发送器忙状态指示
+            .TxD_start(TxD_start),    //开始发送信号
+            .TxD_data(TxD_data)        //待发送的数据
         );
 
     wire is_serial_stat = (data_sram_addr == `SERIAL_STAT);
@@ -70,56 +70,56 @@ module RAM_ctrl (
     // 串口
     always @(*) begin
         if (rst) begin
-            ext_uart_start = 1'b0;
-            ext_uart_tx = 8'b0;
+            TxD_start = 1'b0;
+            TxD_data = 8'b0;
             serial_data = 32'b0;
         end else begin
             if (is_serial_stat) begin
-                ext_uart_start = 1'b0;
-                ext_uart_tx = 8'b0;
-                serial_data = {{30'b0}, {ext_uart_ready}, {!ext_uart_busy}};
+                TxD_start = 1'b0;
+                TxD_data = 8'b0;
+                serial_data = {{30'b0}, {RxD_data_ready}, {!TxD_busy}};
             end else if (data_sram_addr == `SERIAL_DATA) begin
                 if (data_sram_we) begin
-                    ext_uart_start = 1'b0;
-                    ext_uart_tx = 8'b0;
-                    serial_data = {24'b0, ext_uart_rx};
+                    TxD_start = 1'b0;
+                    TxD_data = 8'b0;
+                    serial_data = {24'b0, RxD_data};
                 end else begin
-                    ext_uart_start = 1'b1;
-                    ext_uart_tx = data_sram_wdata[7:0];
+                    TxD_start = 1'b1;
+                    TxD_data = data_sram_wdata[7:0];
                     serial_data = 32'b0;
                 end
             end else begin
-                ext_uart_start = 1'b0;
-                ext_uart_tx = 8'b0;
+                TxD_start = 1'b0;
+                TxD_data = 8'b0;
                 serial_data = 32'b0;
             end
         end
     end
 
     // uart clear
-    always @(posedge clk_50M) begin
+    always @(posedge clk) begin
         if (rst) begin
-            ext_uart_clear <= 1'b0;
+            RxD_clear <= 1'b0;
         end else begin
-            if (ext_uart_clear_next) begin
-                ext_uart_clear <= 1'b1;
+            if (RxD_clear_next) begin
+                RxD_clear <= 1'b1;
             end else begin
-                ext_uart_clear <= 1'b0;
+                RxD_clear <= 1'b0;
             end
         end
     end
 
     // next uart clear
-    always @(negedge clk_50M) begin
+    always @(negedge clk) begin
         if (rst) begin
-            ext_uart_clear_next <= 1'b0;
+            RxD_clear_next <= 1'b0;
         end else begin
-            if (ext_uart_busy && data_sram_we && data_sram_addr == `SERIAL_DATA && !ext_uart_clear_next) begin
-                ext_uart_clear_next <= 1'b1;
-            end else if (ext_uart_clear) begin
-                ext_uart_clear_next <= 1'b0;
+            if (TxD_busy && data_sram_we && data_sram_addr == `SERIAL_DATA && !RxD_clear_next) begin
+                RxD_clear_next <= 1'b1;
+            end else if (RxD_clear) begin
+                RxD_clear_next <= 1'b0;
             end else begin
-                ext_uart_clear_next <= ext_uart_clear_next;
+                RxD_clear_next <= RxD_clear_next;
             end
         end
     end
@@ -131,8 +131,8 @@ module RAM_ctrl (
     always @(*) begin
         if (rst) begin
             base_ram_addr = 20'b0;
-            base_ram_be_n = 4'b1111;
-            base_ram_ce_n = 1'b1;
+            base_ram_be_n = 4'b0;
+            base_ram_ce_n = 1'b0;
             base_ram_oe_n = 1'b1;
             base_ram_we_n = 1'b1;
             inst_sram_rdata = 32'b0;
@@ -154,15 +154,15 @@ module RAM_ctrl (
         end
     end
 
-    assign ext_ram_data = data_sram_we ? 32'hzzzzzzzz : data_sram_wdata;
+    assign ext_ram_data = is_ext_ram ? (data_sram_we ? 32'hzzzzzzzz : data_sram_wdata) : 32'hzzzzzzzz;
     wire [31:0] ext_ram_out = ext_ram_data;
 
     // ExtRAM
     always @(*) begin
         if (rst) begin
             ext_ram_addr = 20'b0;
-            ext_ram_be_n = 4'b1111;
-            ext_ram_ce_n = 1'b1;
+            ext_ram_be_n = 4'b0;
+            ext_ram_ce_n = 1'b0;
             ext_ram_oe_n = 1'b1;
             ext_ram_we_n = 1'b1;
         end else begin
@@ -176,7 +176,7 @@ module RAM_ctrl (
                 ext_ram_addr = 20'b0;
                 ext_ram_be_n = 4'b0;
                 ext_ram_ce_n = 1'b0;
-                ext_ram_oe_n = 1'b0;
+                ext_ram_oe_n = 1'b1;
                 ext_ram_we_n = 1'b1;
             end
         end

@@ -8,27 +8,17 @@ module RegPC (
     output reg [31:0] pc
 );
 
-    reg [31:0] pc_next;
+    always @(posedge clk) begin
+        if (rst) inst_ce <= 1'b0;
+        else inst_ce <= 1'b1;
+    end
 
     always @(posedge clk) begin
-        if (rst) begin
+        if (!inst_ce) begin
             pc <= 32'h80000000;
-            pc_next <= 32'h80000000;
-            inst_ce <= 1'b0;
-        end else begin
-            if (stall) begin
-                pc <= pc;
-                pc_next <= pc_next;
-                inst_ce <= inst_ce;
-            end else if (jump) begin
-                pc <= jump_addr;
-                pc_next <= jump_addr;
-                inst_ce <= 1'b1;
-            end else begin
-                pc <= pc_next;
-                pc_next <= pc + 4;
-                inst_ce <= 1'b1;
-            end
+        end else if (!stall) begin
+            if (jump) pc <= jump_addr;
+            else pc <= pc + 4;
         end
     end
 

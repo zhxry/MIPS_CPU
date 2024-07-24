@@ -6,12 +6,15 @@ module Mem (
     input wire [31:0] mem_addr,
     input wire [31:0] mem_rdata,
     input wire [31:0] mem_wdata_in,
+    output wire stall,
     output reg mem_ce,
     output reg mem_we,
     output reg [3:0] mem_be,
     output reg [31:0] rd_data,
     output reg [31:0] mem_wdata_out
 );
+
+    assign stall = (mem_addr >= 32'h80000000) && (mem_addr < 32'h80400000);
 
     always @(*) begin
         if (mem_read) begin

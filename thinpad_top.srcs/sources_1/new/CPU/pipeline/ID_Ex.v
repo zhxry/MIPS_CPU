@@ -7,7 +7,6 @@ module ID_Ex (
     input wire ID_mem_write,
     input wire ID_reg_write,
     input wire ID_data_width,
-    input wire [1:0] ID_mem_to_reg,
     input wire [2:0] ID_ALU_opt,
     input wire [4:0] ID_rd_addr,
     input wire [31:0] ID_pc,
@@ -21,7 +20,6 @@ module ID_Ex (
     output reg Ex_mem_write,
     output reg Ex_reg_write,
     output reg Ex_data_width,
-    output reg [1:0] Ex_mem_to_reg,
     output reg [2:0] Ex_ALU_opt,
     output reg [4:0] Ex_rd_addr,
     output reg [31:0] Ex_pc,
@@ -39,7 +37,6 @@ module ID_Ex (
             Ex_mem_write <= 1'b0;
             Ex_reg_write <= 1'b0;
             Ex_data_width <= 1'b0;
-            Ex_mem_to_reg <= 2'b0;
             Ex_ALU_opt <= 3'b0;
             Ex_rd_addr <= 5'b0;
             Ex_pc <= 32'b0;
@@ -54,7 +51,6 @@ module ID_Ex (
             Ex_mem_write <= ID_mem_write;
             Ex_reg_write <= ID_reg_write;
             Ex_data_width <= ID_data_width;
-            Ex_mem_to_reg <= ID_mem_to_reg;
             Ex_ALU_opt <= ID_ALU_opt;
             Ex_rd_addr <= ID_rd_addr;
             Ex_pc <= ID_pc;
