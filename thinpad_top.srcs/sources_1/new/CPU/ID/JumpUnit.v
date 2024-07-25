@@ -11,6 +11,7 @@ module JumpUnit (
 );
 
     wire [5:0] opcode = ID_inst[31:26];
+    wire [5:0] shamt = ID_inst[10:6];
     wire [5:0] funct = ID_inst[5:0];
     wire [31:0] imm = {{16{ID_inst[15]}}, ID_inst[15:0]};
 
@@ -27,18 +28,28 @@ module JumpUnit (
     always @(*) begin
         case (opcode)
             `OP_R: begin
-                case (funct)
-                    `FUNCT_R_JR: begin
-                        jump = 1'b1;
-                        jump_addr = reg1_data;
-                    end
-                    `FUNCT_R_JALR: begin
-                        jump = 1'b1;
-                        jump_addr = reg1_data;
-                        link_addr = pc_next + 4;
-                    end
-                    default: jump = 1'b0;
-                endcase
+                if (shamt == 5'b00000) begin
+                    case (funct)
+                        `FUNCT_R_JR: begin
+                            jump = 1'b1;
+                            jump_addr = reg1_data;
+                        end
+                        `FUNCT_R_JALR: begin
+                            jump = 1'b1;
+                            jump_addr = reg1_data;
+                            link_addr = pc_next + 4;
+                        end
+                        default: begin
+                            jump = 1'b0;
+                            jump_addr = 32'b0;
+                            link_addr = 32'b0;
+                        end
+                    endcase
+                end else begin
+                    jump = 1'b0;
+                    jump_addr = 32'b0;
+                    link_addr = 32'b0;
+                end
             end
             `OP_I_BEQ: begin
                 if (reg1_data == reg2_data) begin
@@ -67,7 +78,11 @@ module JumpUnit (
                 jump_addr = jumping_addr;
                 link_addr = pc_next + 4;
             end
-            default: jump = 1'b0;
+            default: begin
+                jump = 1'b0;
+                jump_addr = 32'b0;
+                link_addr = 32'b0;
+            end
         endcase
     end
 

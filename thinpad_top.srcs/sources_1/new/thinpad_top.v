@@ -1,6 +1,6 @@
 `default_nettype none
 
-module thinpad_top(
+module thinpad_top (
     input wire clk_50M,           //50MHz 时钟输入
     input wire clk_11M0592,       //11.0592MHz 时钟输入（备用，可不用）
 
@@ -126,8 +126,8 @@ module thinpad_top(
     wire [31:0] data_sram_wdata;
 
     Datapath Datapath (
-        .clk(clk_50M),
-        .rst(reset_btn),
+        .clk(clk_10M),
+        .rst(reset_of_clk10M),
 
         .inst_sram_rdata(inst_sram_rdata),
         .inst_sram_ce(inst_sram_ce),
@@ -142,8 +142,8 @@ module thinpad_top(
     );
 
     RAM_ctrl RAM_ctrl (
-        .clk(clk_50M),
-        .rst(reset_btn),
+        .clk(clk_10M),
+        .rst(reset_of_clk10M),
 
         .inst_sram_rdata(inst_sram_rdata),
         .inst_sram_ce(inst_sram_ce),

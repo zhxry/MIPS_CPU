@@ -15,8 +15,8 @@ module RAM_ctrl (
     input  wire [31:0] data_sram_addr,
     input  wire [31:0] data_sram_wdata,
 
-    input  wire txd, // 串口发送端
-    output wire rxd, // 串口接收端
+    output wire txd, // 串口发送端
+    input  wire rxd, // 串口接收端
 
     // BaseRAM 信号
     inout  wire [31:0] base_ram_data, // BaseRAM 数据，低 8 位与 CPLD 串口控制器共享
@@ -35,10 +35,12 @@ module RAM_ctrl (
     output reg         ext_ram_we_n  // ExtRAM 写使能，低有效
 );
 
+    wire       RxD_data_ready;
+    wire       RxD_clear;
     wire [7:0] RxD_data;
-    reg  [7:0] TxD_data;
-    wire RxD_data_ready, TxD_busy;
-    reg  TxD_start, RxD_clear, RxD_clear_next;
+    wire       TxD_busy;
+    wire       TxD_start;
+    wire [7:0] TxD_data;
 
     // 接收模块，9600 无检验位
     async_receiver #(.ClkFrequency(59000000),.Baud(9600))
@@ -62,65 +64,81 @@ module RAM_ctrl (
 
     wire is_serial_stat = (data_sram_addr == `SERIAL_STAT);
     wire is_serial_data = (data_sram_addr == `SERIAL_DATA);
-    wire is_base_ram = !is_serial_stat && !is_serial_data && (data_sram_addr >= `BASE_ADDR_ST && data_sram_addr < `BASE_ADDR_ED);
-    wire is_ext_ram = !is_serial_stat && !is_serial_data && (data_sram_addr >= `EXT_ADDR_ST && data_sram_addr < `EXT_ADDR_ED);
+    wire is_base_ram = (data_sram_addr >= `BASE_ADDR_ST) && (data_sram_addr < `BASE_ADDR_ED);
+    wire is_ext_ram = (data_sram_addr >= `EXT_ADDR_ST) && (data_sram_addr < `EXT_ADDR_ED);
 
-    reg [31:0] serial_data;
+    reg [31:0] serial_o;
+    wire       RxD_FIFO_wr_en;
+    wire       RxD_FIFO_full;
+    wire [7:0] RxD_FIFO_din;
+    reg        RxD_FIFO_rd_en;
+    wire       RxD_FIFO_empty;
+    wire [7:0] RxD_FIFO_dout;
+    reg        TxD_FIFO_wr_en;
+    wire       TxD_FIFO_full;
+    reg  [7:0] TxD_FIFO_din;
+    wire       TxD_FIFO_rd_en;
+    wire       TxD_FIFO_empty;
+    wire [7:0] TxD_FIFO_dout;
+
+    fifo_generator_0 RxD_FIFO (
+        .rst(rst),
+        .clk(clk),
+        .wr_en(RxD_FIFO_wr_en),     //写使能
+        .din(RxD_FIFO_din),         //接收到的数据
+        .full(RxD_FIFO_full),       //判满标志
+        .rd_en(RxD_FIFO_rd_en),     //读使能
+        .dout(RxD_FIFO_dout),       //传递给mem阶段读出的数据
+        .empty(RxD_FIFO_empty)      //判空标志
+    );
+
+    fifo_generator_0 TxD_FIFO (
+        .rst(rst),
+        .clk(clk),
+        .wr_en(TxD_FIFO_wr_en),     //写使能
+        .din(TxD_FIFO_din),         //待发送的数据
+        .full(TxD_FIFO_full),       //判满标志
+        .rd_en(TxD_FIFO_rd_en),     //读使能
+        .dout(TxD_FIFO_dout),       //发送器读出的数据
+        .empty(TxD_FIFO_empty)      //判空标志
+    );
+
+    assign TxD_FIFO_rd_en = TxD_start;
+    assign TxD_start = (!TxD_busy) && (!TxD_FIFO_empty);
+    assign TxD_data = TxD_FIFO_dout;
+
+    assign RxD_FIFO_wr_en = RxD_data_ready;
+    assign RxD_FIFO_din = RxD_data;
+    assign RxD_clear = RxD_data_ready && (!RxD_FIFO_full);
 
     // 串口
     always @(*) begin
-        if (rst) begin
-            TxD_start = 1'b0;
-            TxD_data = 8'b0;
-            serial_data = 32'b0;
-        end else begin
-            if (is_serial_stat) begin
-                TxD_start = 1'b0;
-                TxD_data = 8'b0;
-                serial_data = {{30'b0}, {RxD_data_ready}, {!TxD_busy}};
-            end else if (data_sram_addr == `SERIAL_DATA) begin
-                if (data_sram_we) begin
-                    TxD_start = 1'b0;
-                    TxD_data = 8'b0;
-                    serial_data = {24'b0, RxD_data};
-                end else begin
-                    TxD_start = 1'b1;
-                    TxD_data = data_sram_wdata[7:0];
-                    serial_data = 32'b0;
-                end
+        TxD_FIFO_wr_en = 1'b0;
+        TxD_FIFO_din = 8'b0;
+        RxD_FIFO_rd_en = 1'b0;
+        serial_o = 32'b0;
+        if (is_serial_stat) begin
+            TxD_FIFO_wr_en = 1'b0;
+            TxD_FIFO_din = 8'b0;
+            RxD_FIFO_rd_en = 1'b0;
+            serial_o = {{30{1'b0}}, {!RxD_FIFO_empty}, {!TxD_FIFO_full}};
+        end else if (is_serial_data) begin
+            if (data_sram_we) begin
+                TxD_FIFO_wr_en = 1'b0;
+                TxD_FIFO_din = 8'b0;
+                RxD_FIFO_rd_en = 1'b1;
+                serial_o = {{24{1'b0}}, RxD_FIFO_dout};
             end else begin
-                TxD_start = 1'b0;
-                TxD_data = 8'b0;
-                serial_data = 32'b0;
+                TxD_FIFO_wr_en = 1'b1;
+                TxD_FIFO_din = data_sram_wdata[7:0];
+                RxD_FIFO_rd_en = 1'b0;
+                serial_o = 32'b0;
             end
-        end
-    end
-
-    // uart clear
-    always @(posedge clk) begin
-        if (rst) begin
-            RxD_clear <= 1'b0;
         end else begin
-            if (RxD_clear_next) begin
-                RxD_clear <= 1'b1;
-            end else begin
-                RxD_clear <= 1'b0;
-            end
-        end
-    end
-
-    // next uart clear
-    always @(negedge clk) begin
-        if (rst) begin
-            RxD_clear_next <= 1'b0;
-        end else begin
-            if (TxD_busy && data_sram_we && data_sram_addr == `SERIAL_DATA && !RxD_clear_next) begin
-                RxD_clear_next <= 1'b1;
-            end else if (RxD_clear) begin
-                RxD_clear_next <= 1'b0;
-            end else begin
-                RxD_clear_next <= RxD_clear_next;
-            end
+            TxD_FIFO_wr_en = 1'b0;
+            TxD_FIFO_din = 8'b0;
+            RxD_FIFO_rd_en = 1'b0;
+            serial_o = 32'b0;
         end
     end
 
@@ -129,27 +147,25 @@ module RAM_ctrl (
 
     // BaseRAM
     always @(*) begin
-        if (rst) begin
-            base_ram_addr = 20'b0;
-            base_ram_be_n = 4'b0;
+        base_ram_addr = 20'b0;
+        base_ram_be_n = 4'b1111;
+        base_ram_ce_n = 1'b1;
+        base_ram_oe_n = 1'b1;
+        base_ram_we_n = 1'b1;
+        inst_sram_rdata = 32'b0;
+        if (is_base_ram) begin
+            base_ram_addr = data_sram_addr[21:2];
+            base_ram_be_n = data_sram_be;
             base_ram_ce_n = 1'b0;
-            base_ram_oe_n = 1'b1;
-            base_ram_we_n = 1'b1;
+            base_ram_oe_n = !data_sram_we;
+            base_ram_we_n = data_sram_we;
             inst_sram_rdata = 32'b0;
         end else begin
-            if (is_base_ram) begin
-                base_ram_addr = data_sram_addr[21:2];
-                base_ram_be_n = data_sram_be;
-                base_ram_ce_n = 1'b0;
-                base_ram_oe_n = !data_sram_we;
-                base_ram_we_n = data_sram_we;
-            end else begin
-                base_ram_addr = inst_sram_addr[21:2];
-                base_ram_be_n = 4'b0;
-                base_ram_ce_n = 1'b0;
-                base_ram_oe_n = 1'b0;
-                base_ram_we_n = 1'b1;
-            end
+            base_ram_addr = inst_sram_addr[21:2];
+            base_ram_be_n = 4'b0;
+            base_ram_ce_n = 1'b0;
+            base_ram_oe_n = 1'b0;
+            base_ram_we_n = 1'b1;
             inst_sram_rdata = base_ram_out;
         end
     end
@@ -159,32 +175,30 @@ module RAM_ctrl (
 
     // ExtRAM
     always @(*) begin
-        if (rst) begin
+        ext_ram_addr = 20'h00000;
+        ext_ram_be_n = 4'b0000;
+        ext_ram_ce_n = 1'b0;
+        ext_ram_oe_n = 1'b1;
+        ext_ram_we_n = 1'b1;
+        if (is_ext_ram) begin
+            ext_ram_addr = data_sram_addr[21:2];
+            ext_ram_be_n = data_sram_be;
+            ext_ram_ce_n = 1'b0;
+            ext_ram_oe_n = !data_sram_we;
+            ext_ram_we_n = data_sram_we;
+        end else begin
             ext_ram_addr = 20'b0;
             ext_ram_be_n = 4'b0;
             ext_ram_ce_n = 1'b0;
             ext_ram_oe_n = 1'b1;
             ext_ram_we_n = 1'b1;
-        end else begin
-            if (is_ext_ram) begin
-                ext_ram_addr = data_sram_addr[21:2];
-                ext_ram_be_n = data_sram_be;
-                ext_ram_ce_n = 1'b0;
-                ext_ram_oe_n = !data_sram_we;
-                ext_ram_we_n = data_sram_we;
-            end else begin
-                ext_ram_addr = 20'b0;
-                ext_ram_be_n = 4'b0;
-                ext_ram_ce_n = 1'b0;
-                ext_ram_oe_n = 1'b1;
-                ext_ram_we_n = 1'b1;
-            end
         end
     end
 
     always @(*) begin
-        if (rst) begin
-            data_sram_rdata = 32'b0;
+        data_sram_rdata = 32'b0;
+        if (is_serial_data || is_serial_stat) begin
+            data_sram_rdata = serial_o;
         end else if (is_base_ram) begin
             case (data_sram_be)
                 4'b1110: data_sram_rdata = {{24{base_ram_out[7]}}, base_ram_out[7:0]};
@@ -192,7 +206,7 @@ module RAM_ctrl (
                 4'b1011: data_sram_rdata = {{24{base_ram_out[23]}}, base_ram_out[23:16]};
                 4'b0111: data_sram_rdata = {{24{base_ram_out[31]}}, base_ram_out[31:24]};
                 4'b0000: data_sram_rdata = base_ram_out;
-                default: data_sram_rdata = 32'b0;
+                default: data_sram_rdata = base_ram_out;
             endcase
         end else if (is_ext_ram) begin
             case (data_sram_be)
@@ -201,7 +215,7 @@ module RAM_ctrl (
                 4'b1011: data_sram_rdata = {{24{ext_ram_out[23]}}, ext_ram_out[23:16]};
                 4'b0111: data_sram_rdata = {{24{ext_ram_out[31]}}, ext_ram_out[31:24]};
                 4'b0000: data_sram_rdata = ext_ram_out;
-                default: data_sram_rdata = 32'b0;
+                default: data_sram_rdata = ext_ram_out;
             endcase
         end else begin
             data_sram_rdata = 32'b0;

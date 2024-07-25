@@ -83,6 +83,8 @@ module Datapath (
     Regs Regs (
         .clk(clk),
         .rst(rst),
+        .rs1_ren(ID_rs1_ren),
+        .rs2_ren(ID_rs2_ren),
         .reg_write(WB_reg_write),
         .rs1_addr(ID_rs1_addr),
         .rs2_addr(ID_rs2_addr),

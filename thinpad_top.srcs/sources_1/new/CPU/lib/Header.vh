@@ -38,7 +38,6 @@ R-type: addu and or xor sll srl jr mul (srav)
 `define FUNCT_R_SRA  6'b000011
 `define FUNCT_R_JR   6'b001000
 `define FUNCT_R_JALR 6'b001001
-`define FUNCT_R_MUL  6'b000010
 `define FUNCT_R_SRAV 6'b000111
 
 /************ALU_OP************/

@@ -39,8 +39,8 @@ module ControlUnit (
                         `FUNCT_R_AND:  controls = 9'b111000_010;
                         `FUNCT_R_OR:   controls = 9'b111000_011;
                         `FUNCT_R_XOR:  controls = 9'b111000_100;
-                        `FUNCT_R_JR:   controls = 9'b100001_000;
-                        `FUNCT_R_JALR: controls = 9'b101001_001;
+                        `FUNCT_R_JR:   controls = 9'b100000_000;
+                        `FUNCT_R_JALR: controls = 9'b101000_000;
                         `FUNCT_R_SRAV: controls = 9'b111000_111;
                         default:       controls = 9'b000000_000;
                     endcase
@@ -55,10 +55,10 @@ module ControlUnit (
             `OP_I_BNE:   controls = 9'b110000_000;
             `OP_I_BGTZ:  controls = 9'b100000_000;
             `OP_I_LUI:   controls = 9'b101000_000;
-            `OP_I_LB:    controls = 9'b101010_000;
+            `OP_I_LB:    controls = 9'b111010_000;
             `OP_I_SB:    controls = 9'b110001_000;
-            `OP_I_LW:    controls = 9'b101110_001;
-            `OP_I_SW:    controls = 9'b110101_001;
+            `OP_I_LW:    controls = 9'b111110_000;
+            `OP_I_SW:    controls = 9'b110101_000;
             `OP_J_J:     controls = 9'b000000_000;
             `OP_J_JAL:   controls = 9'b001000_000;
             default:     controls = 9'b000000_000;

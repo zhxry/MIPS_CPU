@@ -9,7 +9,7 @@ module ImmGen (
     wire [4:0] shamt = ID_inst[10:6];
     wire [5:0] opcode = ID_inst[31:26];
     wire [31:0] imm_signed = {{16{ID_inst[15]}}, ID_inst[15:0]};
-    wire [31:0] imm_unsigned = {16'b0, ID_inst[15:0]};
+    wire [31:0] imm_unsigned = {{16{1'b0}}, ID_inst[15:0]};
 
     always @(*) begin
         case (opcode)
@@ -22,12 +22,12 @@ module ImmGen (
             `OP_I_ANDI,
             `OP_I_ORI,
             `OP_I_XORI: imm_out = imm_unsigned;
-            `OP_I_LUI: imm_out = {ID_inst[15:0], 16'b0};
+            `OP_I_LUI: imm_out = {ID_inst[15:0], {16{1'b0}}};
             `OP_R: begin
                 case (funct)
                     `FUNCT_R_SLL,
                     `FUNCT_R_SRL,
-                    `FUNCT_R_SRA: imm_out = {27'b0, shamt};
+                    `FUNCT_R_SRA: imm_out = {{27{1'b0}}, shamt};
                     default: imm_out = 32'b0;
                 endcase
             end

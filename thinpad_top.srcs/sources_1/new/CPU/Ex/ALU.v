@@ -9,7 +9,6 @@ module ALU (
     input wire [31:0] reg2,
     input wire [31:0] imm,
     input wire [31:0] link_addr,
-    output reg zero,
     output reg [31:0] ALU_res
 );
 
@@ -32,7 +31,6 @@ module ALU (
                 default: ALU_res = 32'b0;
             endcase
         end
-        zero = (ALU_res == 32'b0) ? 1 : 0;
     end
 
 endmodule
