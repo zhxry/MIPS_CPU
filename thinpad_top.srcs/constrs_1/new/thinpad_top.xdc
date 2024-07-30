@@ -290,9 +290,9 @@ set_property BITSTREAM.GENERAL.COMPRESS TRUE [current_design]
 # Adding Delay
 
 set cpu_clk [get_clocks -of_objects  [get_pins clock_gen/clk_out1]]
-set uart_delay 10
-set ram_input_delay 17
-set ram_output_delay 12
+set uart_delay 5
+set ram_input_delay 8
+set ram_output_delay 6
 
 set_input_delay -clock $cpu_clk $ram_input_delay [get_ports base_ram_data[*]] 
 set_input_delay -clock $cpu_clk $ram_input_delay [get_ports ext_ram_data[*]] 

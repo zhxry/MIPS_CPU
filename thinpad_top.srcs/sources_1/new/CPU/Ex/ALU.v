@@ -4,7 +4,7 @@ module ALU (
     input wire jump,
     input wire mem_read,
     input wire mem_write,
-    input wire [2:0] ALU_opt,
+    input wire [3:0] ALU_opt,
     input wire [31:0] reg1,
     input wire [31:0] reg2,
     input wire [31:0] imm,
@@ -28,6 +28,7 @@ module ALU (
                 `ALU_OP_SLL: ALU_res = B << A[4:0];
                 `ALU_OP_SRL: ALU_res = B >> A[4:0];
                 `ALU_OP_SRA: ALU_res = $signed(B) >>> A[4:0];
+                `ALU_OP_MUL: ALU_res = A * B;
                 default: ALU_res = 32'b0;
             endcase
         end

@@ -42,14 +42,15 @@ R-type: addu and or xor sll srl jr mul (srav)
 
 /************ALU_OP************/
 
-`define ALU_OP_ADD 3'b000
-`define ALU_OP_SUB 3'b001
-`define ALU_OP_AND 3'b010
-`define ALU_OP_OR  3'b011
-`define ALU_OP_XOR 3'b100
-`define ALU_OP_SLL 3'b101
-`define ALU_OP_SRL 3'b110
-`define ALU_OP_SRA 3'b111
+`define ALU_OP_ADD 4'b0000
+`define ALU_OP_SUB 4'b0001
+`define ALU_OP_AND 4'b0010
+`define ALU_OP_OR  4'b0011
+`define ALU_OP_XOR 4'b0100
+`define ALU_OP_SLL 4'b0101
+`define ALU_OP_SRL 4'b0110
+`define ALU_OP_SRA 4'b0111
+`define ALU_OP_MUL 4'b1000
 
 /************RAM************/
 

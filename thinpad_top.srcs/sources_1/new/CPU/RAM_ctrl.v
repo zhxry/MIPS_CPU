@@ -43,7 +43,7 @@ module RAM_ctrl (
     wire [7:0] TxD_data;
 
     // 接收模块，9600 无检验位
-    async_receiver #(.ClkFrequency(59000000),.Baud(9600))
+    async_receiver #(.ClkFrequency(56000000),.Baud(9600))
         ext_uart_r(
             .clk(clk),                       //外部时钟信号
             .RxD(rxd),                           //外部串行信号输入
@@ -53,7 +53,7 @@ module RAM_ctrl (
         );
 
     // 发送模块，9600 无检验位
-    async_transmitter #(.ClkFrequency(59000000),.Baud(9600))
+    async_transmitter #(.ClkFrequency(56000000),.Baud(9600))
         ext_uart_t(
             .clk(clk),                  //外部时钟信号
             .TxD(txd),                      //串行信号输出

@@ -18,14 +18,14 @@ module Datapath (
 
     wire ID_jump, ID_rs1_ren, ID_rs2_ren, ID_stall;
     wire ID_mem_read, ID_mem_write, ID_reg_write, ID_data_width;
-    wire [2:0] ID_ALU_opt;
+    wire [3:0] ID_ALU_opt;
     wire [4:0] ID_rs1_addr, ID_rs2_addr, ID_rd_addr;
     wire [31:0] ID_pc, ID_inst, ID_jump_addr;
     wire [31:0] ID_imm, ID_rs1_data, ID_rs2_data;
     wire [31:0] ID_reg1_data, ID_reg2_data, ID_link_addr;
 
     wire Ex_jump, Ex_mem_read, Ex_mem_write, Ex_reg_write, Ex_data_width;
-    wire [2:0] Ex_ALU_opt;
+    wire [3:0] Ex_ALU_opt;
     wire [4:0] Ex_rd_addr;
     wire [31:0] Ex_pc, Ex_inst, Ex_imm, Ex_reg1_data, Ex_reg2_data, Ex_link_addr;
     wire [31:0] Ex_ALU_res, Ex_mem_addr, Ex_mem_wdata;
